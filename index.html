@@ -506,8 +506,11 @@
         // Load the provided car models to replace the box cars
         const gltfLoader = new THREE.GLTFLoader();
         const carModels = [
-            // 'camry80.glb', 
-            'camry30.glb', 'camry40.glb'];
+            'camry80.glb', 
+            'camry30.glb',
+            'camry40.glb',
+            'cobalt.glb'
+            ];
         const loadedModels = [];
         let loadedCount = 0;
 
@@ -523,6 +526,17 @@
                 else if (modelName === 'camry40.glb') {
                     carModel.rotation.y = Math.PI;
                     carModel.scale.set(2, 2, 2); // Scale up the model
+                }
+                else if (modelName === 'cobalt.glb') {
+                    // Set rotation to face straight (0 or Math.PI) and lift above the ground
+                    carModel.rotation.y = 0; // Or Math.PI depending on exactly which way it was authored
+                    carModel.position.y = 0.7; // Lift the car up so it's not half under the ground
+                    
+                    // Auto-center X and Z axes since the model's origin isn't centered
+                    const box = new THREE.Box3().setFromObject(carModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    carModel.position.x = -center.x;
+                    carModel.position.z = -center.z;
                 }
                 else {
                     // Rotate 90 degrees to the right for other models like camry80
