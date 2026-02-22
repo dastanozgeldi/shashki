@@ -146,6 +146,22 @@
             box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
             background: rgba(0, 0, 0, 0.5);
         }
+
+        @media (max-width: 768px) {
+            #minimap {
+                width: 120px;
+                height: 180px;
+                top: 10px;
+                right: 10px;
+                border-width: 1px;
+            }
+            #ui {
+                top: 10px;
+                left: 10px;
+                padding: 10px;
+                font-size: 0.8rem;
+            }
+        }
     </style>
 </head>
 
@@ -191,7 +207,8 @@
         camera.position.set(0, 1.5, 0); // Slightly lowered for a seated position
         scene.add(camera); // We MUST add the camera to the scene to attach the dashboard to it
 
-        const topCamera = new THREE.PerspectiveCamera(60, 250 / 350, 0.1, 200);
+        const minimapEl = document.getElementById('minimap');
+        const topCamera = new THREE.PerspectiveCamera(60, minimapEl.clientWidth / minimapEl.clientHeight, 0.1, 200);
         scene.add(topCamera);
         topCamera.layers.enable(1);
         camera.layers.disable(1);
@@ -859,6 +876,10 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            if (minimapEl) {
+                topCamera.aspect = minimapEl.clientWidth / minimapEl.clientHeight;
+                topCamera.updateProjectionMatrix();
+            }
             if (collisionCount > 0 && collisionCount <= 3) {
                 drawCracks(collisionCount); // Redraw SVG on resize to adapt to new dimensions
             }
