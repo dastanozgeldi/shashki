@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al-Farabi Night Drive POV</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0a0f18;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #00ffcc;
+            text-shadow: 0 0 5px #00ffcc;
+        }
+
+        .damage-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+            display: none;
+            /* Prevent cracks from rendering over the bottom 3D dashboard */
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 80%);
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 80%);
+        }
+
+        /* SVG lines styling for the cracks */
+        #crack-svg line {
+            stroke: rgba(255, 255, 255, 0.8);
+            stroke-linecap: round;
+            filter: drop-shadow(0px 0px 2px rgba(255, 255, 255, 0.5)) drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.8));
+        }
+
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(40, 0, 0, 0.85);
+            color: #ff3333;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #gameOverScreen h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff0000;
+        }
+
+        #tryAgainBtn {
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            background: transparent;
+            color: #ff3333;
+            border: 2px solid #ff3333;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #tryAgainBtn:hover {
+            background: #ff3333;
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui">
+        <strong>AL-FARABI AVE - NIGHT CRUISE</strong><br><br>
+        Speed: <span id="speedDisplay">80</span> km/h<br>
+        Controls: A / D Keys<br><br>
+        <em>Watch out for traffic!</em>
+    </div>
+
+    <!-- Damage Overlay Container (SVG) -->
+    <div id="damage-container" class="damage-overlay">
+        <svg id="crack-svg" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen">
+        <h1>WRECKED.</h1>
+        <button id="tryAgainBtn">Try Again</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <script>
+        // 1. Setup Scene, Camera, and Renderer
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0f18);
+        scene.fog = new THREE.Fog(0x0a0f18, 20, 180);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+        camera.position.set(0, 1.5, 0); // Slightly lowered for a seated position
+        scene.add(camera); // We MUST add the camera to the scene to attach the dashboard to it
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // --- NEW: CAR INTERIOR (DASHBOARD) ---
+        const dashGroup = new THREE.Group();
+
+        // Dashboard panel (block at the bottom of the screen)
+        const dashGeo = new THREE.BoxGeometry(6, 1.5, 1);
+        const dashMat = new THREE.MeshPhongMaterial({ color: 0x050505, shininess: 10 });
+        const dash = new THREE.Mesh(dashGeo, dashMat);
+        dash.position.set(0, -0.9, -1.2);
+        dashGroup.add(dash);
+
+        // Steering Wheel
+        const wheelGeo = new THREE.TorusGeometry(0.25, 0.04, 16, 32);
+        const wheelMat = new THREE.MeshPhongMaterial({ color: 0x111111, shininess: 50 });
+        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+        wheel.position.set(-0.5, -0.4, -0.9); // Positioned for left-hand drive
+        wheel.rotation.x = -Math.PI / 4; // Tilted back towards the driver
+        dashGroup.add(wheel);
+
+        // A-Pillars (Windshield frame sides)
+        const pillarGeo = new THREE.BoxGeometry(0.1, 2, 0.1);
+        const pillarL = new THREE.Mesh(pillarGeo, dashMat);
+        pillarL.position.set(-1.8, 0, -1);
+        pillarL.rotation.z = -0.2; // Angle inward
+        dashGroup.add(pillarL);
+
+        const pillarR = new THREE.Mesh(pillarGeo, dashMat);
+        pillarR.position.set(1.8, 0, -1);
+        pillarR.rotation.z = 0.2; // Angle inward
+        dashGroup.add(pillarR);
+
+        // Interior Dash Light (gives the dash a subtle cyan glow)
+        const interiorLight = new THREE.PointLight(0x00ffcc, 0.3, 3);
+        interiorLight.position.set(0, 0, -0.5);
+        dashGroup.add(interiorLight);
+
+        // Attach the whole interior to the camera
+        camera.add(dashGroup);
+        // -------------------------------------
+
+        // 2. Build the Environment
+        const roadGeo = new THREE.PlaneGeometry(30, 400);
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5 });
+        const road = new THREE.Mesh(roadGeo, roadMat);
+        road.rotation.x = -Math.PI / 2;
+        road.position.z = -100;
+        scene.add(road);
+
+        const environmentObjects = [];
+        const trafficCars = [];
+
+        const lightGeo = new THREE.SphereGeometry(0.5, 8, 8);
+        const lightMat = new THREE.MeshBasicMaterial({ color: 0xffcc44 });
+
+        const buildingGeo = new THREE.BoxGeometry(8, 40, 10);
+        const buildingMat = new THREE.MeshPhongMaterial({ color: 0x151515, specular: 0x333333 });
+
+        const carGeo = new THREE.BoxGeometry(2, 1.5, 4.5);
+        const carMat = new THREE.MeshPhongMaterial({ color: 0x222233, shininess: 100 });
+
+        const tailLightGeo = new THREE.BoxGeometry(1.8, 0.3, 0.2);
+        const tailLightMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+
+        const laneMarkerGeo = new THREE.PlaneGeometry(0.2, 3);
+        const laneMarkerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        const sideMarkerGeo = new THREE.PlaneGeometry(0.2, 15); // Continuous looking line
+        const sideMarkerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        const objectCount = 40;
+        const spacing = 15;
+
+        for (let i = 0; i < objectCount; i++) {
+            const zPos = -i * spacing;
+
+            const lightL = new THREE.Mesh(lightGeo, lightMat);
+            lightL.position.set(-12, 8, zPos);
+            scene.add(lightL);
+            environmentObjects.push(lightL);
+
+            const lightR = new THREE.Mesh(lightGeo, lightMat);
+            lightR.position.set(12, 8, zPos);
+            scene.add(lightR);
+            environmentObjects.push(lightR);
+
+            // Add lane dividers (dashed)
+            [-4, 0, 4].forEach(xPos => {
+                const marker = new THREE.Mesh(laneMarkerGeo, laneMarkerMat);
+                marker.position.set(xPos, 0.01, zPos);
+                marker.rotation.x = -Math.PI / 2;
+                scene.add(marker);
+                environmentObjects.push(marker);
+            });
+
+            // Add road side boundaries (continuous)
+            [-8, 8].forEach(xPos => {
+                const sideMarker = new THREE.Mesh(sideMarkerGeo, sideMarkerMat);
+                sideMarker.position.set(xPos, 0.01, zPos);
+                sideMarker.rotation.x = -Math.PI / 2;
+                scene.add(sideMarker);
+                environmentObjects.push(sideMarker);
+            });
+
+            if (i % 2 === 0) {
+                const bL = new THREE.Mesh(buildingGeo, buildingMat);
+                bL.position.set(-20 - Math.random() * 5, 20, zPos);
+                scene.add(bL);
+                environmentObjects.push(bL);
+
+                const bR = new THREE.Mesh(buildingGeo, buildingMat);
+                bR.position.set(20 + Math.random() * 5, 20, zPos);
+                scene.add(bR);
+                environmentObjects.push(bR);
+            }
+        }
+
+        const laneXPositions = [-6, -2, 2, 6];
+
+        for (let i = 0; i < 8; i++) {
+            const carGroup = new THREE.Group();
+
+            const carBody = new THREE.Mesh(carGeo, carMat);
+            carBody.position.y = 0.75;
+            carGroup.add(carBody);
+
+            const tailLight = new THREE.Mesh(tailLightGeo, tailLightMat);
+            tailLight.position.set(0, 1, 2.26);
+            carGroup.add(tailLight);
+
+            const randomLane = laneXPositions[Math.floor(Math.random() * laneXPositions.length)];
+            const randomDistance = -40 - (Math.random() * 150);
+
+            carGroup.position.set(randomLane, 0, randomDistance);
+            scene.add(carGroup);
+            trafficCars.push({
+                mesh: carGroup,
+                placeholderBody: carBody,
+                placeholderTailLight: tailLight,
+                speed: 0.3 + (Math.random() * 0.2)
+            });
+        }
+
+        // Load the provided Camry model to replace the box cars
+        const gltfLoader = new THREE.GLTFLoader();
+        gltfLoader.load('camry2025.glb', (gltf) => {
+            const camryModel = gltf.scene;
+
+            // Rotate 90 degrees to the right
+            camryModel.rotation.y = -Math.PI / 2;
+
+            trafficCars.forEach(carObj => {
+                // Remove the box placeholders
+                carObj.mesh.remove(carObj.placeholderBody);
+                carObj.mesh.remove(carObj.placeholderTailLight);
+
+                const modelClone = camryModel.clone();
+                carObj.mesh.add(modelClone);
+            });
+        });
+
+        // 3. Lighting
+        const ambientLight = new THREE.AmbientLight(0x445566, 1.5);
+        scene.add(ambientLight);
+
+        const headLight = new THREE.PointLight(0xffffff, 2.0, 100);
+        headLight.position.set(0, 2, 0);
+        scene.add(headLight); // Keep headlights attached to scene, not camera, to illuminate road properly
+
+        const dirLight = new THREE.DirectionalLight(0x223344, 1);
+        dirLight.position.set(-10, 20, -10);
+        scene.add(dirLight);
+
+        // 4. Controls and Movement
+        const playerSpeed = 1.0;
+        let targetX = 0;
+
+        window.addEventListener('keydown', (e) => {
+            const laneWidth = 4;
+            const key = e.key.toLowerCase();
+
+            if (key === 'a') targetX -= laneWidth;
+            if (key === 'd') targetX += laneWidth;
+
+            targetX = Math.max(-6, Math.min(6, targetX));
+        });
+
+        // --- Crack Rendering System ---
+        const crackLevels = [
+            [], // Level 0 (No cracks)
+            [ // Level 1 (Mild)
+                [0.20,0.80,0.25,0.65,2], [0.20,0.80,0.35,0.75,2], [0.20,0.80,0.15,0.60,1],
+                [0.25,0.65,0.30,0.50,1], [0.35,0.75,0.50,0.70,1], [0.25,0.65,0.35,0.60,1]
+            ],
+            [ // Level 2 (Moderate)
+                [0.20,0.80,0.25,0.65,2], [0.20,0.80,0.35,0.75,2], [0.20,0.80,0.15,0.60,1],
+                [0.25,0.65,0.30,0.50,1], [0.35,0.75,0.50,0.70,1], [0.25,0.65,0.35,0.60,1],
+                [0.70,0.30,0.60,0.45,3], [0.70,0.30,0.80,0.20,2], [0.70,0.30,0.55,0.25,2],
+                [0.60,0.45,0.45,0.50,1], [0.60,0.45,0.65,0.60,1], [0.55,0.25,0.40,0.20,1],
+                [0.50,0.70,0.65,0.60,1], [0.30,0.50,0.45,0.50,1]
+            ],
+            [ // Level 3 (Severe)
+                [0.20,0.80,0.25,0.65,2], [0.20,0.80,0.35,0.75,2], [0.20,0.80,0.15,0.60,1],
+                [0.25,0.65,0.30,0.50,1], [0.35,0.75,0.50,0.70,1], [0.25,0.65,0.35,0.60,1],
+                [0.70,0.30,0.60,0.45,3], [0.70,0.30,0.80,0.20,2], [0.70,0.30,0.55,0.25,2],
+                [0.60,0.45,0.45,0.50,1], [0.60,0.45,0.65,0.60,1], [0.55,0.25,0.40,0.20,1],
+                [0.50,0.70,0.65,0.60,1], [0.30,0.50,0.45,0.50,1], [0.50,0.50,0.45,0.35,3],
+                [0.50,0.50,0.55,0.65,3], [0.50,0.50,0.35,0.55,3], [0.50,0.50,0.65,0.40,3],
+                [0.45,0.35,0.30,0.30,2], [0.55,0.65,0.70,0.80,2], [0.35,0.55,0.20,0.40,2],
+                [0.65,0.40,0.85,0.50,2], [0.45,0.35,0.55,0.25,1], [0.35,0.55,0.30,0.50,1],
+                [0.55,0.65,0.50,0.70,1], [0.65,0.40,0.60,0.45,1], [0.45,0.50,0.50,0.50,1]
+            ]
+        ];
+
+        function drawCracks(level) {
+            const svg = document.getElementById('crack-svg');
+            svg.innerHTML = ''; // Clear previous cracks
+            
+            if (level === 0) {
+                document.getElementById('damage-container').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('damage-container').style.display = 'block';
+            
+            const lines = crackLevels[level];
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            lines.forEach(line => {
+                const [x1, y1, x2, y2, thickness] = line;
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                // Shift all cracks 15% higher up the screen
+                const yOffset = -0.2;
+                path.setAttribute("x1", x1 * w);
+                path.setAttribute("y1", (y1 + yOffset) * h);
+                path.setAttribute("x2", x2 * w);
+                path.setAttribute("y2", (y2 + yOffset) * h);
+                path.setAttribute("stroke-width", thickness);
+                svg.appendChild(path);
+            });
+        }
+
+        // 5. Game Loop & Collision Mechanics
+        let collisionCount = 0;
+        let isGameOver = false;
+
+        function resetGame() {
+            collisionCount = 0;
+            isGameOver = false;
+            
+            drawCracks(0); // Hide cracks
+            document.getElementById('gameOverScreen').style.display = 'none';
+
+            // Reset traffic cars
+            trafficCars.forEach(carObj => {
+                carObj.mesh.position.z = -150 - (Math.random() * 100);
+            });
+
+            animate(); // Restart loop
+        }
+
+        document.getElementById('tryAgainBtn').addEventListener('click', resetGame);
+
+        function animate() {
+            if (isGameOver) return; // Stop rendering if game is over
+
+            requestAnimationFrame(animate);
+
+            // Calculate steering intensity for the wheel animation
+            const steeringDiff = targetX - camera.position.x;
+
+            // Smooth steering for the car
+            camera.position.x += steeringDiff * 0.1;
+            headLight.position.x = camera.position.x; // Keep headlights aligned with car
+
+            // Animate steering wheel rotation based on movement
+            wheel.rotation.z = steeringDiff * -0.5;
+
+            environmentObjects.forEach(obj => {
+                obj.position.z += playerSpeed;
+                if (obj.position.z > 10) obj.position.z -= (objectCount * spacing);
+            });
+
+            trafficCars.forEach(carObj => {
+                carObj.mesh.position.z += (playerSpeed - carObj.speed);
+
+                // --- Collision Detection ---
+                // The player is at z ~ 0. Cars moving towards positive Z hit the player when z hits close to 0.
+                const zDist = Math.abs(carObj.mesh.position.z - camera.position.z);
+                const xDist = Math.abs(carObj.mesh.position.x - camera.position.x);
+
+                // Thresholds for a hit (assuming car length is ~4.5, lane width is ~4)
+                if (zDist < 3.5 && xDist < 1.8) {
+                    collisionCount++;
+                    
+                    // Teleport car away instantly so it doesn't trigger multiple hits in a single frame
+                    carObj.mesh.position.z = -150 - (Math.random() * 50);
+                    carObj.mesh.position.x = laneXPositions[Math.floor(Math.random() * laneXPositions.length)];
+
+                    if (collisionCount <= 3) {
+                        drawCracks(collisionCount);
+                    } else if (collisionCount >= 4) {
+                        isGameOver = true;
+                        document.getElementById('gameOverScreen').style.display = 'flex';
+                        return; // Exit current frame
+                    }
+                }
+
+                // Reset position if it passed behind player
+                if (carObj.mesh.position.z > 5) {
+                    carObj.mesh.position.z = -150 - (Math.random() * 50);
+                    carObj.mesh.position.x = laneXPositions[Math.floor(Math.random() * laneXPositions.length)];
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            if (collisionCount > 0 && collisionCount <= 3) {
+                drawCracks(collisionCount); // Redraw SVG on resize to adapt to new dimensions
+            }
+        });
+    </script>
+</body>
+
+</html>
