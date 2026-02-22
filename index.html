@@ -70,8 +70,15 @@
 
         #gameOverScreen h1 {
             font-size: 4rem;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             text-shadow: 0 0 10px #ff0000;
+        }
+
+        #gameOverScreen h2 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #ff3333;
+            color: #fff;
         }
 
         #tryAgainBtn {
@@ -131,6 +138,7 @@
 <body>
     <div id="ui">
         <strong>AL-FARABI AVE - NIGHT CRUISE</strong><br><br>
+        Score: <span id="scoreDisplay" style="color: #fff; text-shadow: 0 0 10px #fff; font-size: 1.2em;">0</span><br>
         Speed: <span id="speedDisplay">80</span> km/h<br>
         Controls: A / D Keys<br><br>
         <em>Watch out for traffic!</em>
@@ -144,6 +152,7 @@
     <!-- Game Over Screen -->
     <div id="gameOverScreen">
         <h1>WRECKED.</h1>
+        <h2>Score: <span id="finalScoreDisplay">0</span></h2>
         <button id="tryAgainBtn">Try Again</button>
     </div>
 
@@ -583,10 +592,15 @@
         // 5. Game Loop & Collision Mechanics
         let collisionCount = 0;
         let isGameOver = false;
+        let scoreCounter = 0;
 
         function resetGame() {
             collisionCount = 0;
             isGameOver = false;
+            scoreCounter = 0;
+
+            const uiScoreDisplay = document.getElementById('scoreDisplay');
+            if (uiScoreDisplay) uiScoreDisplay.innerText = '0';
 
             drawCracks(0); // Hide cracks
             document.getElementById('gameOverScreen').style.display = 'none';
@@ -615,6 +629,12 @@
 
             // Animate steering wheel rotation based on movement
             wheel.rotation.z = steeringDiff * -0.5;
+
+            // --- Update Score ---
+            scoreCounter += playerSpeed;
+            const currentScore = Math.floor(scoreCounter * 0.1); // Scaled for readability
+            const uiScoreDisplay = document.getElementById('scoreDisplay');
+            if (uiScoreDisplay) uiScoreDisplay.innerText = currentScore;
 
             // --- Animate Dashboard Instruments ---
             // Simulate a cruising speed
@@ -673,6 +693,7 @@
                         drawCracks(collisionCount);
                     } else if (collisionCount >= 4) {
                         isGameOver = true;
+                        document.getElementById('finalScoreDisplay').innerText = Math.floor(scoreCounter * 0.1);
                         document.getElementById('gameOverScreen').style.display = 'flex';
                         return; // Exit current frame
                     }
