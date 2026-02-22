@@ -345,7 +345,76 @@
         const lightMat = new THREE.MeshBasicMaterial({ color: 0xffcc44 });
 
         const buildingGeo = new THREE.BoxGeometry(8, 40, 10);
-        const buildingMat = new THREE.MeshPhongMaterial({ color: 0x151515, specular: 0x333333 });
+        
+        function createBuildingMaterial() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 512;
+            const context = canvas.getContext('2d');
+            
+            const mapCanvas = document.createElement('canvas');
+            mapCanvas.width = 128;
+            mapCanvas.height = 512;
+            const mapContext = mapCanvas.getContext('2d');
+            
+            mapContext.fillStyle = '#111111';
+            mapContext.fillRect(0, 0, 128, 512);
+
+            context.fillStyle = '#000000';
+            context.fillRect(0, 0, 128, 512);
+            
+            const rows = 25; 
+            const cols = 5;
+            const windowWidth = 14;
+            const windowHeight = 12;
+            const spacingX = (128 - (cols * windowWidth)) / (cols + 1);
+            const spacingY = (512 - (rows * windowHeight)) / (rows + 1);
+            
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const x = spacingX + c * (windowWidth + spacingX);
+                    const y = spacingY + r * (windowHeight + spacingY);
+
+                    if (Math.random() > 0.65) {
+                        const isWarm = Math.random() > 0.5;
+                        const brightness = 0.5 + Math.random() * 0.5;
+                        
+                        let rColor = isWarm ? 255 : 180 + Math.random() * 50;
+                        let gColor = isWarm ? 180 + Math.random() * 75 : 220 + Math.random() * 35;
+                        let bColor = isWarm ? 80 + Math.random() * 50 : 255;
+                        
+                        rColor = Math.floor(rColor * brightness);
+                        gColor = Math.floor(gColor * brightness);
+                        bColor = Math.floor(bColor * brightness);
+                        
+                        context.fillStyle = `rgb(${rColor}, ${gColor}, ${bColor})`;
+                        context.fillRect(x, y, windowWidth, windowHeight);
+                        
+                        mapContext.fillStyle = `rgb(${Math.max(0, rColor-50)}, ${Math.max(0, gColor-50)}, ${Math.max(0, bColor-50)})`;
+                        mapContext.fillRect(x, y, windowWidth, windowHeight);
+                    } else {
+                        mapContext.fillStyle = '#050505';
+                        mapContext.fillRect(x, y, windowWidth, windowHeight);
+                    }
+                }
+            }
+            
+            const emissiveMap = new THREE.CanvasTexture(canvas);
+            const map = new THREE.CanvasTexture(mapCanvas);
+            
+            return new THREE.MeshPhongMaterial({
+                map: map,
+                emissiveMap: emissiveMap,
+                emissive: 0xffffff,
+                emissiveIntensity: 0.8,
+                specular: 0x222222
+            });
+        }
+
+        const buildingMaterials = [];
+        for (let i = 0; i < 6; i++) {
+            buildingMaterials.push(createBuildingMaterial());
+        }
 
         const carGeo = new THREE.BoxGeometry(2, 1.5, 4.5);
         const carMat = new THREE.MeshPhongMaterial({ color: 0x222233, shininess: 100 });
@@ -394,12 +463,14 @@
             });
 
             if (i % 2 === 0) {
-                const bL = new THREE.Mesh(buildingGeo, buildingMat);
+                const matL = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
+                const bL = new THREE.Mesh(buildingGeo, matL);
                 bL.position.set(-20 - Math.random() * 5, 20, zPos);
                 scene.add(bL);
                 environmentObjects.push(bL);
 
-                const bR = new THREE.Mesh(buildingGeo, buildingMat);
+                const matR = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
+                const bR = new THREE.Mesh(buildingGeo, matR);
                 bR.position.set(20 + Math.random() * 5, 20, zPos);
                 scene.add(bR);
                 environmentObjects.push(bR);
