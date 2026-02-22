@@ -88,6 +88,40 @@
             background: #ff3333;
             color: #000;
         }
+
+        /* Mobile Controls */
+        #mobileControls {
+            display: none;
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-sizing: border-box;
+            z-index: 100;
+            pointer-events: none; /* Let clicks pass through empty space */
+        }
+
+        .mobile-btn {
+            background: rgba(0, 255, 204, 0.2);
+            border: 2px solid #00ffcc;
+            color: #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 20px 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            text-shadow: 0 0 5px #00ffcc;
+            user-select: none;
+            touch-action: manipulation;
+            pointer-events: auto; /* Re-enable pointer events for buttons */
+        }
+
+        .mobile-btn:active {
+            background: rgba(0, 255, 204, 0.6);
+            transform: scale(0.95);
+        }
     </style>
 </head>
 
@@ -108,6 +142,12 @@
     <div id="gameOverScreen">
         <h1>WRECKED.</h1>
         <button id="tryAgainBtn">Try Again</button>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div id="mobileControls">
+        <button id="btnLeft" class="mobile-btn">LEFT</button>
+        <button id="btnRight" class="mobile-btn">RIGHT</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -302,15 +342,48 @@
         const playerSpeed = 1.0;
         let targetX = 0;
 
-        window.addEventListener('keydown', (e) => {
-            const laneWidth = 4;
-            const key = e.key.toLowerCase();
+        const laneWidth = 4;
 
-            if (key === 'a') targetX -= laneWidth;
-            if (key === 'd') targetX += laneWidth;
-
+        function steerLeft() {
+            targetX -= laneWidth;
             targetX = Math.max(-6, Math.min(6, targetX));
+        }
+
+        function steerRight() {
+            targetX += laneWidth;
+            targetX = Math.max(-6, Math.min(6, targetX));
+        }
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'a' || key === 'arrowleft') steerLeft();
+            if (key === 'd' || key === 'arrowright') steerRight();
         });
+
+        // Mobile Controls Detection & Setup
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        if (isMobile) {
+            document.getElementById('mobileControls').style.display = 'flex';
+            
+            // Update UI text for controls
+            const uiText = document.getElementById('ui');
+            uiText.innerHTML = uiText.innerHTML.replace('A / D Keys', 'Touch Controls');
+
+            // Touch events for steering buttons
+            const btnLeft = document.getElementById('btnLeft');
+            const btnRight = document.getElementById('btnRight');
+            
+            // Prevent default zooming/scrolling behavior on touch
+            btnLeft.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                steerLeft();
+            }, { passive: false });
+
+            btnRight.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                steerRight();
+            }, { passive: false });
+        }
 
         // --- Crack Rendering System ---
         const crackLevels = [
