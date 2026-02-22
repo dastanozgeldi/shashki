@@ -40,8 +40,8 @@
             z-index: 20;
             display: none;
             /* Prevent cracks from rendering over the bottom 3D dashboard */
-            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 80%);
-            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 80%);
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0) 80%);
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0) 80%);
         }
 
         /* SVG lines styling for the cracks */
@@ -59,7 +59,8 @@
             height: 100%;
             background: rgba(40, 0, 0, 0.85);
             color: #ff3333;
-            display: none; /* Hidden by default */
+            display: none;
+            /* Hidden by default */
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -99,7 +100,8 @@
             padding: 0 30px;
             box-sizing: border-box;
             z-index: 100;
-            pointer-events: none; /* Let clicks pass through empty space */
+            pointer-events: none;
+            /* Let clicks pass through empty space */
         }
 
         .mobile-btn {
@@ -115,7 +117,8 @@
             text-shadow: 0 0 5px #00ffcc;
             user-select: none;
             touch-action: manipulation;
-            pointer-events: auto; /* Re-enable pointer events for buttons */
+            pointer-events: auto;
+            /* Re-enable pointer events for buttons */
         }
 
         .mobile-btn:active {
@@ -178,12 +181,124 @@
         dashGroup.add(dash);
 
         // Steering Wheel
-        const wheelGeo = new THREE.TorusGeometry(0.25, 0.04, 16, 32);
+        const wheelGeo = new THREE.TorusGeometry(0.24, 0.04, 16, 32);
         const wheelMat = new THREE.MeshPhongMaterial({ color: 0x111111, shininess: 50 });
         const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-        wheel.position.set(-0.5, -0.4, -0.9); // Positioned for left-hand drive
-        wheel.rotation.x = -Math.PI / 4; // Tilted back towards the driver
+        wheel.position.set(-0.5, -0.28, -0.65); // Moved closer to camera and slightly up
+        wheel.rotation.x = -Math.PI / 5; // Tilted back towards the driver
         dashGroup.add(wheel);
+
+        // Steering Column
+        const colGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.5);
+        const colMat = new THREE.MeshPhongMaterial({ color: 0x111111 });
+        const column = new THREE.Mesh(colGeo, colMat);
+        column.position.set(-0.5, -0.32, -0.85);
+        column.rotation.x = Math.PI / 2 - Math.PI / 5;
+        dashGroup.add(column);
+
+        // --- Instrument Cluster ---
+        const cluster = new THREE.Group();
+        // Position on top of the dash, properly centered behind the wheel
+        cluster.position.set(-0.5, -0.05, -0.85);
+        cluster.rotation.x = -Math.PI / 12; // Slight tilt
+        dashGroup.add(cluster);
+
+        // Speedometer Dial (Circle)
+        const speedoGeo = new THREE.CircleGeometry(0.12, 32); // Slightly smaller to fit nicely
+        const dialMat = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+        const speedo = new THREE.Mesh(speedoGeo, dialMat);
+        speedo.position.set(0, 0, 0.002); // Slightly forward to overlap cleanly
+        cluster.add(speedo);
+
+        // Speedometer Outline
+        const speedoOutlineGeo = new THREE.RingGeometry(0.12, 0.13, 32);
+        const outlineMat = new THREE.MeshBasicMaterial({ color: 0x888888 }); // Brighter outline
+        const speedoOutline = new THREE.Mesh(speedoOutlineGeo, outlineMat);
+        speedoOutline.position.set(0, 0, 0.003);
+        cluster.add(speedoOutline);
+
+        // Speedometer Center Cap
+        const capGeo = new THREE.CircleGeometry(0.015, 16);
+        const capMat = new THREE.MeshBasicMaterial({ color: 0x444444 });
+        const speedoCap = new THREE.Mesh(capGeo, capMat);
+        speedoCap.position.set(0, 0, 0.005);
+        cluster.add(speedoCap);
+
+        // Speedometer Needle
+        const needleGeo = new THREE.BoxGeometry(0.005, 0.10, 0.001);
+        needleGeo.translate(0, 0.05, 0);
+        const needleMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+        const speedoNeedle = new THREE.Mesh(needleGeo, needleMat);
+        speedoNeedle.position.set(0, 0, 0.004);
+        cluster.add(speedoNeedle);
+
+        // RPM Dial (Right of Speedo)
+        const rpmGeo = new THREE.CircleGeometry(0.09, 32);
+        const rpmDial = new THREE.Mesh(rpmGeo, dialMat);
+        rpmDial.position.set(0.18, -0.03, 0);
+        cluster.add(rpmDial);
+
+        const rpmOutlineGeo = new THREE.RingGeometry(0.09, 0.10, 32);
+        const rpmOutline = new THREE.Mesh(rpmOutlineGeo, outlineMat);
+        rpmOutline.position.set(0.18, -0.03, 0.001);
+        cluster.add(rpmOutline);
+
+        const rpmCap = new THREE.Mesh(capGeo, capMat);
+        rpmCap.position.set(0.18, -0.03, 0.003);
+        cluster.add(rpmCap);
+
+        // RPM Needle
+        const rpmNeedleGeo = new THREE.BoxGeometry(0.004, 0.07, 0.001);
+        rpmNeedleGeo.translate(0, 0.035, 0);
+        const rpmNeedle = new THREE.Mesh(rpmNeedleGeo, needleMat);
+        rpmNeedle.position.set(0.18, -0.03, 0.002);
+        cluster.add(rpmNeedle);
+
+        // Fuel Dial (Left of Speedo)
+        const fuelGeo = new THREE.CircleGeometry(0.06, 32);
+        const fuelDial = new THREE.Mesh(fuelGeo, dialMat);
+        fuelDial.position.set(-0.16, -0.05, 0);
+        cluster.add(fuelDial);
+
+        const fuelOutlineGeo = new THREE.RingGeometry(0.06, 0.07, 32);
+        const fuelOutline = new THREE.Mesh(fuelOutlineGeo, outlineMat);
+        fuelOutline.position.set(-0.16, -0.05, 0.001);
+        cluster.add(fuelOutline);
+
+        const fuelCap = new THREE.Mesh(capGeo, capMat);
+        fuelCap.position.set(-0.16, -0.05, 0.003);
+        cluster.add(fuelCap);
+
+        const fuelNeedleGeo = new THREE.BoxGeometry(0.003, 0.05, 0.001);
+        fuelNeedleGeo.translate(0, 0.025, 0);
+        const fuelNeedle = new THREE.Mesh(fuelNeedleGeo, needleMat);
+        fuelNeedle.position.set(-0.16, -0.05, 0.002);
+        fuelNeedle.rotation.z = -Math.PI / 4; // Pointing to Full
+        cluster.add(fuelNeedle);
+
+        // Turn Indicators (Left and Right Arrows)
+        const arrowShape = new THREE.Shape();
+        arrowShape.moveTo(0, 0);
+        arrowShape.lineTo(0.02, 0.015);
+        arrowShape.lineTo(0.02, 0.008);
+        arrowShape.lineTo(0.05, 0.008);
+        arrowShape.lineTo(0.05, -0.008);
+        arrowShape.lineTo(0.02, -0.008);
+        arrowShape.lineTo(0.02, -0.015);
+        arrowShape.lineTo(0, 0);
+
+        const arrowGeoLeft = new THREE.ShapeGeometry(arrowShape);
+        const indicatorOffMat = new THREE.MeshBasicMaterial({ color: 0x002200, side: THREE.DoubleSide }); // darker off
+        const indicatorOnMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
+        const leftIndicator = new THREE.Mesh(arrowGeoLeft, indicatorOffMat);
+        leftIndicator.position.set(-0.1, 0.12, 0.001); // Positioned above speedo
+        cluster.add(leftIndicator);
+
+        const arrowGeoRight = new THREE.ShapeGeometry(arrowShape);
+        arrowGeoRight.scale(-1, 1, 1);
+        const rightIndicator = new THREE.Mesh(arrowGeoRight, indicatorOffMat);
+        rightIndicator.position.set(0.1, 0.12, 0.001); // Positioned above speedo
+        cluster.add(rightIndicator);
 
         // A-Pillars (Windshield frame sides)
         const pillarGeo = new THREE.BoxGeometry(0.1, 2, 0.1);
@@ -308,21 +423,45 @@
             });
         }
 
-        // Load the provided Camry model to replace the box cars
+        // Load the provided car models to replace the box cars
         const gltfLoader = new THREE.GLTFLoader();
-        gltfLoader.load('camry2025.glb', (gltf) => {
-            const camryModel = gltf.scene;
+        const carModels = ['camry80.glb', 'camry30.glb', 'camry40.glb'];
+        const loadedModels = [];
+        let loadedCount = 0;
 
-            // Rotate 90 degrees to the right
-            camryModel.rotation.y = -Math.PI / 2;
+        carModels.forEach(modelName => {
+            gltfLoader.load(modelName, (gltf) => {
+                const carModel = gltf.scene;
 
-            trafficCars.forEach(carObj => {
-                // Remove the box placeholders
-                carObj.mesh.remove(carObj.placeholderBody);
-                carObj.mesh.remove(carObj.placeholderTailLight);
+                // Apply specific rotations based on the model
+                if (modelName === 'camry30.glb') {
+                    // camry30 is sideways right, so need to rotate it to face forward (approx 180 or 0 depending on its original axis)
+                    carModel.rotation.y = 0; // Adjust this if it still looks wrong. -Math.PI / 2 rotates it 90 degrees.
+                }
+                else if (modelName === 'camry40.glb') {
+                    carModel.rotation.y = Math.PI;
+                    carModel.scale.set(2, 2, 2); // Scale up the model
+                }
+                else {
+                    // Rotate 90 degrees to the right for other models like camry80
+                    carModel.rotation.y = -Math.PI / 2;
+                }
 
-                const modelClone = camryModel.clone();
-                carObj.mesh.add(modelClone);
+                loadedModels.push({ model: carModel, name: modelName });
+                loadedCount++;
+
+                // Once all models are loaded, assign them to traffic cars
+                if (loadedCount === carModels.length) {
+                    trafficCars.forEach(carObj => {
+                        // Remove the box placeholders
+                        carObj.mesh.remove(carObj.placeholderBody);
+                        carObj.mesh.remove(carObj.placeholderTailLight);
+
+                        // Randomly pick one of the loaded models
+                        const randomSelection = loadedModels[Math.floor(Math.random() * loadedModels.length)];
+                        carObj.mesh.add(randomSelection.model.clone());
+                    });
+                }
             });
         });
 
@@ -364,7 +503,7 @@
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         if (isMobile) {
             document.getElementById('mobileControls').style.display = 'flex';
-            
+
             // Update UI text for controls
             const uiText = document.getElementById('ui');
             uiText.innerHTML = uiText.innerHTML.replace('A / D Keys', 'Touch Controls');
@@ -372,7 +511,7 @@
             // Touch events for steering buttons
             const btnLeft = document.getElementById('btnLeft');
             const btnRight = document.getElementById('btnRight');
-            
+
             // Prevent default zooming/scrolling behavior on touch
             btnLeft.addEventListener('touchstart', (e) => {
                 e.preventDefault();
@@ -389,40 +528,40 @@
         const crackLevels = [
             [], // Level 0 (No cracks)
             [ // Level 1 (Mild)
-                [0.20,0.80,0.25,0.65,2], [0.20,0.80,0.35,0.75,2], [0.20,0.80,0.15,0.60,1],
-                [0.25,0.65,0.30,0.50,1], [0.35,0.75,0.50,0.70,1], [0.25,0.65,0.35,0.60,1]
+                [0.20, 0.80, 0.25, 0.65, 2], [0.20, 0.80, 0.35, 0.75, 2], [0.20, 0.80, 0.15, 0.60, 1],
+                [0.25, 0.65, 0.30, 0.50, 1], [0.35, 0.75, 0.50, 0.70, 1], [0.25, 0.65, 0.35, 0.60, 1]
             ],
             [ // Level 2 (Moderate)
-                [0.20,0.80,0.25,0.65,2], [0.20,0.80,0.35,0.75,2], [0.20,0.80,0.15,0.60,1],
-                [0.25,0.65,0.30,0.50,1], [0.35,0.75,0.50,0.70,1], [0.25,0.65,0.35,0.60,1],
-                [0.70,0.30,0.60,0.45,3], [0.70,0.30,0.80,0.20,2], [0.70,0.30,0.55,0.25,2],
-                [0.60,0.45,0.45,0.50,1], [0.60,0.45,0.65,0.60,1], [0.55,0.25,0.40,0.20,1],
-                [0.50,0.70,0.65,0.60,1], [0.30,0.50,0.45,0.50,1]
+                [0.20, 0.80, 0.25, 0.65, 2], [0.20, 0.80, 0.35, 0.75, 2], [0.20, 0.80, 0.15, 0.60, 1],
+                [0.25, 0.65, 0.30, 0.50, 1], [0.35, 0.75, 0.50, 0.70, 1], [0.25, 0.65, 0.35, 0.60, 1],
+                [0.70, 0.30, 0.60, 0.45, 3], [0.70, 0.30, 0.80, 0.20, 2], [0.70, 0.30, 0.55, 0.25, 2],
+                [0.60, 0.45, 0.45, 0.50, 1], [0.60, 0.45, 0.65, 0.60, 1], [0.55, 0.25, 0.40, 0.20, 1],
+                [0.50, 0.70, 0.65, 0.60, 1], [0.30, 0.50, 0.45, 0.50, 1]
             ],
             [ // Level 3 (Severe)
-                [0.20,0.80,0.25,0.65,2], [0.20,0.80,0.35,0.75,2], [0.20,0.80,0.15,0.60,1],
-                [0.25,0.65,0.30,0.50,1], [0.35,0.75,0.50,0.70,1], [0.25,0.65,0.35,0.60,1],
-                [0.70,0.30,0.60,0.45,3], [0.70,0.30,0.80,0.20,2], [0.70,0.30,0.55,0.25,2],
-                [0.60,0.45,0.45,0.50,1], [0.60,0.45,0.65,0.60,1], [0.55,0.25,0.40,0.20,1],
-                [0.50,0.70,0.65,0.60,1], [0.30,0.50,0.45,0.50,1], [0.50,0.50,0.45,0.35,3],
-                [0.50,0.50,0.55,0.65,3], [0.50,0.50,0.35,0.55,3], [0.50,0.50,0.65,0.40,3],
-                [0.45,0.35,0.30,0.30,2], [0.55,0.65,0.70,0.80,2], [0.35,0.55,0.20,0.40,2],
-                [0.65,0.40,0.85,0.50,2], [0.45,0.35,0.55,0.25,1], [0.35,0.55,0.30,0.50,1],
-                [0.55,0.65,0.50,0.70,1], [0.65,0.40,0.60,0.45,1], [0.45,0.50,0.50,0.50,1]
+                [0.20, 0.80, 0.25, 0.65, 2], [0.20, 0.80, 0.35, 0.75, 2], [0.20, 0.80, 0.15, 0.60, 1],
+                [0.25, 0.65, 0.30, 0.50, 1], [0.35, 0.75, 0.50, 0.70, 1], [0.25, 0.65, 0.35, 0.60, 1],
+                [0.70, 0.30, 0.60, 0.45, 3], [0.70, 0.30, 0.80, 0.20, 2], [0.70, 0.30, 0.55, 0.25, 2],
+                [0.60, 0.45, 0.45, 0.50, 1], [0.60, 0.45, 0.65, 0.60, 1], [0.55, 0.25, 0.40, 0.20, 1],
+                [0.50, 0.70, 0.65, 0.60, 1], [0.30, 0.50, 0.45, 0.50, 1], [0.50, 0.50, 0.45, 0.35, 3],
+                [0.50, 0.50, 0.55, 0.65, 3], [0.50, 0.50, 0.35, 0.55, 3], [0.50, 0.50, 0.65, 0.40, 3],
+                [0.45, 0.35, 0.30, 0.30, 2], [0.55, 0.65, 0.70, 0.80, 2], [0.35, 0.55, 0.20, 0.40, 2],
+                [0.65, 0.40, 0.85, 0.50, 2], [0.45, 0.35, 0.55, 0.25, 1], [0.35, 0.55, 0.30, 0.50, 1],
+                [0.55, 0.65, 0.50, 0.70, 1], [0.65, 0.40, 0.60, 0.45, 1], [0.45, 0.50, 0.50, 0.50, 1]
             ]
         ];
 
         function drawCracks(level) {
             const svg = document.getElementById('crack-svg');
             svg.innerHTML = ''; // Clear previous cracks
-            
+
             if (level === 0) {
                 document.getElementById('damage-container').style.display = 'none';
                 return;
             }
 
             document.getElementById('damage-container').style.display = 'block';
-            
+
             const lines = crackLevels[level];
             const w = window.innerWidth;
             const h = window.innerHeight;
@@ -448,7 +587,7 @@
         function resetGame() {
             collisionCount = 0;
             isGameOver = false;
-            
+
             drawCracks(0); // Hide cracks
             document.getElementById('gameOverScreen').style.display = 'none';
 
@@ -477,6 +616,38 @@
             // Animate steering wheel rotation based on movement
             wheel.rotation.z = steeringDiff * -0.5;
 
+            // --- Animate Dashboard Instruments ---
+            // Simulate a cruising speed
+            const currentSpeed = 80 + Math.sin(Date.now() * 0.002) * 2;
+            const uiSpeedDisplay = document.getElementById('speedDisplay');
+            if (uiSpeedDisplay) uiSpeedDisplay.innerText = Math.round(currentSpeed);
+            
+            // Map speed 0-160 km/h to angle
+            // 0 -> 5*PI/4 (bottom left), 80 -> PI/2 (top), 160 -> -PI/4 (bottom right)
+            const speedoAngle = (5 * Math.PI / 4) - ((currentSpeed / 160) * (3 * Math.PI / 2));
+            speedoNeedle.rotation.z = speedoAngle;
+
+            // Simulate RPM based on speed and add slight vibration
+            const rpmValue = 2000 + (currentSpeed * 20) + Math.sin(Date.now() * 0.05) * 50;
+            // Map 0-8000 RPM to angle
+            const rpmAngle = (5 * Math.PI / 4) - ((rpmValue / 8000) * (3 * Math.PI / 2));
+            rpmNeedle.rotation.z = rpmAngle;
+
+            // Turn Indicators logic
+            const timeMs = Date.now();
+            const blink = (timeMs % 600) < 300; // Blink on/off every 300ms
+            
+            if (steeringDiff < -0.5) { // Steering left
+                leftIndicator.material = blink ? indicatorOnMat : indicatorOffMat;
+                rightIndicator.material = indicatorOffMat;
+            } else if (steeringDiff > 0.5) { // Steering right
+                rightIndicator.material = blink ? indicatorOnMat : indicatorOffMat;
+                leftIndicator.material = indicatorOffMat;
+            } else {
+                leftIndicator.material = indicatorOffMat;
+                rightIndicator.material = indicatorOffMat;
+            }
+
             environmentObjects.forEach(obj => {
                 obj.position.z += playerSpeed;
                 if (obj.position.z > 10) obj.position.z -= (objectCount * spacing);
@@ -493,7 +664,7 @@
                 // Thresholds for a hit (assuming car length is ~4.5, lane width is ~4)
                 if (zDist < 3.5 && xDist < 1.8) {
                     collisionCount++;
-                    
+
                     // Teleport car away instantly so it doesn't trigger multiple hits in a single frame
                     carObj.mesh.position.z = -150 - (Math.random() * 50);
                     carObj.mesh.position.x = laneXPositions[Math.floor(Math.random() * laneXPositions.length)];
