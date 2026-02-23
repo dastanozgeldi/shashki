@@ -132,6 +132,36 @@
             background: rgba(0, 255, 204, 0.6);
             transform: scale(0.95);
         }
+
+        #minimap {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 250px;
+            height: 350px;
+            border: 2px solid #00ffcc;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            #minimap {
+                width: 120px;
+                height: 180px;
+                top: 10px;
+                right: 10px;
+                border-width: 1px;
+            }
+            #ui {
+                top: 10px;
+                left: 10px;
+                padding: 10px;
+                font-size: 0.8rem;
+            }
+        }
     </style>
 </head>
 
@@ -143,6 +173,8 @@
         Controls: A / D Keys<br><br>
         <em>Watch out for traffic!</em>
     </div>
+
+    <div id="minimap"></div>
 
     <!-- Damage Overlay Container (SVG) -->
     <div id="damage-container" class="damage-overlay">
@@ -174,6 +206,12 @@
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
         camera.position.set(0, 1.5, 0); // Slightly lowered for a seated position
         scene.add(camera); // We MUST add the camera to the scene to attach the dashboard to it
+
+        const minimapEl = document.getElementById('minimap');
+        const topCamera = new THREE.PerspectiveCamera(60, minimapEl.clientWidth / minimapEl.clientHeight, 0.1, 200);
+        scene.add(topCamera);
+        topCamera.layers.enable(1);
+        camera.layers.disable(1);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -505,6 +543,24 @@
 
         // Load the provided car models to replace the box cars
         const gltfLoader = new THREE.GLTFLoader();
+
+        // Load Player Car for Minimap
+        const playerCarMesh = new THREE.Group();
+        scene.add(playerCarMesh);
+        gltfLoader.load('cobalt.glb', (gltf) => {
+            const carModel = gltf.scene;
+            carModel.rotation.y = 0; 
+            carModel.position.y = 0.7; 
+            const box = new THREE.Box3().setFromObject(carModel);
+            const center = box.getCenter(new THREE.Vector3());
+            carModel.position.x = -center.x;
+            carModel.position.z = -center.z;
+            playerCarMesh.add(carModel);
+            playerCarMesh.traverse((child) => {
+                child.layers.set(1);
+            });
+        });
+
         const carModels = [
             'camry80.glb', 
             'camry30.glb',
@@ -793,7 +849,25 @@
                 }
             });
 
+            playerCarMesh.position.x = camera.position.x;
+            playerCarMesh.position.z = camera.position.z - 2;
+
+            topCamera.position.set(camera.position.x, 15, camera.position.z + 10);
+            topCamera.lookAt(camera.position.x, 0, camera.position.z - 15);
+
+            renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+            renderer.setScissor(0, 0, window.innerWidth, window.innerHeight);
+            renderer.setScissorTest(true);
             renderer.render(scene, camera);
+
+            const minimapEl = document.getElementById('minimap');
+            if (minimapEl) {
+                const rect = minimapEl.getBoundingClientRect();
+                const bottomY = window.innerHeight - rect.bottom;
+                renderer.setViewport(rect.left, bottomY, rect.width, rect.height);
+                renderer.setScissor(rect.left, bottomY, rect.width, rect.height);
+                renderer.render(scene, topCamera);
+            }
         }
 
         animate();
@@ -802,6 +876,10 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            if (minimapEl) {
+                topCamera.aspect = minimapEl.clientWidth / minimapEl.clientHeight;
+                topCamera.updateProjectionMatrix();
+            }
             if (collisionCount > 0 && collisionCount <= 3) {
                 drawCracks(collisionCount); // Redraw SVG on resize to adapt to new dimensions
             }
