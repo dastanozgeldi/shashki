@@ -406,6 +406,11 @@
 
       // Attach the whole interior to the camera
       camera.add(dashGroup);
+      // Put dashboard on layer 2 so minimap doesn't render it
+      dashGroup.traverse((child) => {
+        child.layers.set(2);
+      });
+      camera.layers.enable(2);
       // -------------------------------------
 
       // 2. Build the Environment
@@ -413,6 +418,9 @@
       const roadMat = new THREE.MeshStandardMaterial({
         color: 0x222222,
         roughness: 0.5,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
       });
       const road = new THREE.Mesh(roadGeo, roadMat);
       road.rotation.x = -Math.PI / 2;
@@ -422,6 +430,8 @@
       const environmentObjects = [];
       const trafficCars = [];
 
+      // Street lamp placeholders (replaced by GLB model once loaded)
+      const lampPlaceholders = [];
       const lightGeo = new THREE.SphereGeometry(0.5, 8, 8);
       const lightMat = new THREE.MeshBasicMaterial({ color: 0xffcc44 });
 
@@ -514,26 +524,28 @@
       const sideMarkerGeo = new THREE.PlaneGeometry(0.2, 15); // Continuous looking line
       const sideMarkerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-      const objectCount = 40;
-      const spacing = 15;
+      const objectCount = 12;
+      const spacing = 30;
 
       for (let i = 0; i < objectCount; i++) {
         const zPos = -i * spacing;
 
         const lightL = new THREE.Mesh(lightGeo, lightMat);
-        lightL.position.set(-12, 8, zPos);
+        lightL.position.set(-9, 0.01, zPos);
         scene.add(lightL);
         environmentObjects.push(lightL);
+        lampPlaceholders.push(lightL);
 
         const lightR = new THREE.Mesh(lightGeo, lightMat);
-        lightR.position.set(12, 8, zPos);
+        lightR.position.set(9, 0.01, zPos);
         scene.add(lightR);
         environmentObjects.push(lightR);
+        lampPlaceholders.push(lightR);
 
         // Add lane dividers (dashed)
         [-4, 0, 4].forEach((xPos) => {
           const marker = new THREE.Mesh(laneMarkerGeo, laneMarkerMat);
-          marker.position.set(xPos, 0.01, zPos);
+          marker.position.set(xPos, 0.02, zPos);
           marker.rotation.x = -Math.PI / 2;
           scene.add(marker);
           environmentObjects.push(marker);
@@ -542,7 +554,7 @@
         // Add road side boundaries (continuous)
         [-8, 8].forEach((xPos) => {
           const sideMarker = new THREE.Mesh(sideMarkerGeo, sideMarkerMat);
-          sideMarker.position.set(xPos, 0.01, zPos);
+          sideMarker.position.set(xPos, 0.02, zPos);
           sideMarker.rotation.x = -Math.PI / 2;
           scene.add(sideMarker);
           environmentObjects.push(sideMarker);
@@ -599,6 +611,52 @@
       // Load the provided car models to replace the box cars
       const gltfLoader = new THREE.GLTFLoader();
 
+      // Load street lamp GLB model and replace placeholders
+      gltfLoader.load("lamps.glb", (gltf) => {
+        const lampModel = gltf.scene;
+
+        lampPlaceholders.forEach((placeholder, i) => {
+          const lamp = lampModel.clone();
+          lamp.position.copy(placeholder.position);
+          lamp.scale.set(3.5, 3.5, 3.5);
+          // Left lamps face right, right lamps face left
+          if (placeholder.position.x < 0) {
+            lamp.rotation.y = -Math.PI*2;
+          } else {
+            lamp.rotation.y = -Math.PI ;
+          }
+
+          // Alternating spotlights: odd pairs light left, even pairs light right
+          const pairIndex = Math.floor(i / 2);
+          const isLeft = placeholder.position.x < 0;
+          const lightThisSide = (pairIndex % 2 === 0) ? isLeft : !isLeft;
+
+          if (lightThisSide) {
+            const spotLight = new THREE.SpotLight(0xffddaa, 2.0, 25, Math.PI / 4, 0.6, 1.5);
+            spotLight.position.set(placeholder.position.x, 7, placeholder.position.z);
+            scene.add(spotLight);
+            environmentObjects.push(spotLight);
+
+            const targetObj = new THREE.Object3D();
+            targetObj.position.set(
+              isLeft ? placeholder.position.x + 5 : placeholder.position.x - 5,
+              0,
+              placeholder.position.z
+            );
+            scene.add(targetObj);
+            environmentObjects.push(targetObj);
+            spotLight.target = targetObj;
+          }
+
+          scene.add(lamp);
+
+          const idx = environmentObjects.indexOf(placeholder);
+          if (idx !== -1) environmentObjects[idx] = lamp;
+
+          scene.remove(placeholder);
+        });
+      });
+
       // Load Player Car for Minimap
       const playerCarMesh = new THREE.Group();
       scene.add(playerCarMesh);
@@ -621,7 +679,7 @@
         "camry30.glb",
         "camry40.glb",
         "cobalt.glb",
-        "k5.glb",
+        "kia-k5.glb",
       ];
       const loadedModels = [];
       let loadedCount = 0;
@@ -637,8 +695,8 @@
           } else if (modelName === "camry40.glb") {
             carModel.rotation.y = Math.PI;
             carModel.scale.set(2, 2, 2); // Scale up the model
-          } else if (modelName === "k5.glb") {
-            carModel.scale.set(0.013, 0.013, 0.013);
+          } else if (modelName === "kia-k5.glb") {
+            carModel.scale.set(0.1, 0.1, 0.1);
             carModel.rotation.y = Math.PI;
           } else if (modelName === "cobalt.glb") {
             // Set rotation to face straight (0 or Math.PI) and lift above the ground
@@ -675,16 +733,27 @@
       });
 
       // 3. Lighting
-      const ambientLight = new THREE.AmbientLight(0x445566, 1.5);
+      const ambientLight = new THREE.AmbientLight(0x112233, 0.4);
       scene.add(ambientLight);
 
-      const headLight = new THREE.PointLight(0xffffff, 2.0, 100);
-      headLight.position.set(0, 2, 0);
-      scene.add(headLight); // Keep headlights attached to scene, not camera, to illuminate road properly
-
-      const dirLight = new THREE.DirectionalLight(0x223344, 1);
+      const dirLight = new THREE.DirectionalLight(0x223344, 0.3);
       dirLight.position.set(-10, 20, -10);
       scene.add(dirLight);
+
+      // Player car headlights (in scene, updated in animate loop)
+      const headlightTarget = new THREE.Object3D();
+      headlightTarget.position.set(0, 0, -30);
+      scene.add(headlightTarget);
+
+      const headlightL = new THREE.SpotLight(0xffffff, 2.5, 45, Math.PI / 9, 0.5, 1.5);
+      headlightL.position.set(-0.6, 1.2, -1);
+      headlightL.target = headlightTarget;
+      scene.add(headlightL);
+
+      const headlightR = new THREE.SpotLight(0xffffff, 2.5, 45, Math.PI / 9, 0.5, 1.5);
+      headlightR.position.set(0.6, 1.2, -1);
+      headlightR.target = headlightTarget;
+      scene.add(headlightR);
 
       // 4. Controls and Movement
       const playerSpeed = 1.0;
@@ -880,8 +949,11 @@
 
         // Smooth steering for the car
         camera.position.x += steeringDiff * 0.1;
-        headLight.position.x = camera.position.x; // Keep headlights aligned with car
 
+        // Update headlights to follow camera
+        headlightL.position.set(camera.position.x - 0.6, 1.2, camera.position.z - 1);
+        headlightR.position.set(camera.position.x + 0.6, 1.2, camera.position.z - 1);
+        headlightTarget.position.set(camera.position.x, 0, camera.position.z - 30);
         // Animate steering wheel rotation based on movement
         wheel.rotation.z = steeringDiff * -0.5;
 
