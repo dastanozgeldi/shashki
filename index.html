@@ -155,205 +155,6 @@
         background: rgba(0, 0, 0, 0.5);
       }
 
-      /* ── Radio Player Overlay ── */
-      .radio-player {
-        position: absolute;
-        bottom: 20px;
-        right: 20px;
-        width: 360px;
-        background: rgba(18, 18, 26, 0.92);
-        border: 1px solid #1e1e2e;
-        border-radius: 14px;
-        padding: 16px 20px;
-        z-index: 30;
-        font-family: "Courier New", Courier, monospace;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      }
-
-      .radio-player .station-info {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 14px;
-      }
-
-      .radio-player .station-icon {
-        width: 48px;
-        height: 48px;
-        background: linear-gradient(135deg, #ff6b3d, #ff3d6b);
-        border-radius: 10px;
-        display: grid;
-        place-items: center;
-        font-size: 22px;
-        flex-shrink: 0;
-      }
-
-      .radio-player .station-name {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #e8e4df;
-      }
-
-      .radio-player .station-genre {
-        color: #7a7680;
-        font-size: 0.65rem;
-        margin-top: 2px;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-      }
-
-      .radio-player .live-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        background: rgba(61, 220, 132, 0.13);
-        color: #3ddc84;
-        font-size: 0.55rem;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 100px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 4px;
-      }
-
-      .radio-player .live-dot {
-        width: 5px;
-        height: 5px;
-        background: #3ddc84;
-        border-radius: 50%;
-        animation: radioPulse 1.5s ease infinite;
-      }
-
-      @keyframes radioPulse {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.4; transform: scale(0.7); }
-      }
-
-      .radio-player .controls {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .radio-player .play-btn {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        border: none;
-        background: #ff6b3d;
-        color: #fff;
-        font-size: 18px;
-        cursor: pointer;
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        transition: all 0.2s ease;
-      }
-
-      .radio-player .play-btn:hover {
-        transform: scale(1.08);
-        filter: brightness(1.15);
-      }
-
-      .radio-player .volume-wrap {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex: 1;
-      }
-
-      .radio-player .vol-icon {
-        color: #7a7680;
-        font-size: 0.75rem;
-      }
-
-      .radio-player input[type="range"] {
-        -webkit-appearance: none;
-        flex: 1;
-        height: 3px;
-        border-radius: 2px;
-        background: #1e1e2e;
-        outline: none;
-        max-width: 120px;
-      }
-
-      .radio-player input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #ff6b3d;
-        cursor: pointer;
-      }
-
-      .radio-player .r-visualizer {
-        display: flex;
-        align-items: flex-end;
-        gap: 2px;
-        height: 24px;
-        margin-left: auto;
-      }
-
-      .radio-player .r-viz-bar {
-        width: 2px;
-        background: #ff6b3d;
-        border-radius: 2px;
-        transition: height 0.15s ease;
-        opacity: 0.5;
-      }
-
-      .radio-player .r-viz-bar.active { opacity: 1; }
-
-      .radio-player .status-bar {
-        margin-top: 10px;
-        padding-top: 8px;
-        border-top: 1px solid #1e1e2e;
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.6rem;
-        color: #7a7680;
-      }
-
-      .radio-player .station-btns {
-        margin-top: 10px;
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-      }
-
-      .radio-player .station-btn {
-        background: rgba(255, 107, 61, 0.2);
-        border: 1px solid rgba(255, 107, 61, 0.4);
-        color: #ff6b3d;
-        font-family: inherit;
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 5px 12px;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .radio-player .station-btn:hover {
-        background: rgba(255, 107, 61, 0.4);
-      }
-
-      .radio-player .station-btn.active {
-        background: #ff6b3d;
-        color: #fff;
-      }
-
-      @media (max-width: 768px) {
-        .radio-player {
-          width: 300px;
-          bottom: 80px;
-          right: 10px;
-          padding: 12px 14px;
-        }
-      }
-
       @media (max-width: 768px) {
         #minimap {
           width: 120px;
@@ -399,36 +200,6 @@
       ></svg>
     </div>
 
-    <!-- Radio Player -->
-    <div class="radio-player" id="radioPlayer">
-      <div class="station-info">
-        <div class="station-icon">📻</div>
-        <div>
-          <div class="station-name" id="radioStationName">Select a station...</div>
-          <div class="station-genre" id="radioStationGenre">—</div>
-          <div class="live-badge">
-            <div class="live-dot"></div>
-            Live Stream
-          </div>
-        </div>
-      </div>
-      <div class="controls">
-        <button class="play-btn" id="radioPlayBtn">▶</button>
-        <div class="volume-wrap">
-          <span class="vol-icon">🔈</span>
-          <input type="range" id="radioVolume" min="0" max="1" step="0.01" value="0.5" />
-        </div>
-        <div class="r-visualizer" id="radioVisualizer"></div>
-      </div>
-      <div class="status-bar">
-        <span id="radioStatus">Stopped</span>
-        <span id="radioFormat">—</span>
-      </div>
-      <div class="station-btns">
-        <button class="station-btn active" id="stationBtn0">Beu FM 🇰🇿</button>
-        <button class="station-btn" id="stationBtn1">Zhuldyz FM ⭐</button>
-      </div>
-    </div>
 
     <!-- Game Over Screen -->
     <div id="gameOverScreen">
@@ -981,6 +752,139 @@
       //   });
       // });
 
+      // ── Tesla-Style 3D Infotainment Screen ──
+      const infoScreenCanvas = document.createElement("canvas");
+      infoScreenCanvas.width = 256;
+      infoScreenCanvas.height = 512;
+      const infoCtx = infoScreenCanvas.getContext("2d");
+      const infoTexture = new THREE.CanvasTexture(infoScreenCanvas);
+      infoTexture.minFilter = THREE.LinearFilter;
+
+      // Bezel frame
+      const bezelGeo = new THREE.BoxGeometry(0.28, 0.42, 0.02);
+      const bezelMat = new THREE.MeshPhongMaterial({ color: 0x111111, shininess: 80 });
+      const bezel = new THREE.Mesh(bezelGeo, bezelMat);
+      bezel.position.set(0.55, -0.15, -0.75);
+      bezel.rotation.y = -0.3;
+      bezel.layers.set(2);
+      dashGroup.add(bezel);
+
+      // Glass screen (slightly inset)
+      const screenGeo = new THREE.PlaneGeometry(0.24, 0.38);
+      const screenMat = new THREE.MeshBasicMaterial({ map: infoTexture });
+      const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+      screenMesh.position.set(0, 0, 0.011);
+      screenMesh.layers.set(2);
+      bezel.add(screenMesh);
+
+      // Mount/stand
+      const mountGeo = new THREE.BoxGeometry(0.06, 0.08, 0.03);
+      const mount = new THREE.Mesh(mountGeo, bezelMat);
+      mount.position.set(0, -0.22, -0.005);
+      mount.layers.set(2);
+      bezel.add(mount);
+
+      // Ambient screen glow
+      const screenGlow = new THREE.PointLight(0x44aaff, 0.15, 0.5);
+      screenGlow.position.set(0.55, -0.1, -0.7);
+      screenGlow.layers.set(2);
+      dashGroup.add(screenGlow);
+
+      function updateInfoScreen() {
+        const ctx = infoCtx;
+        const w = 256, h = 512;
+
+        // Background gradient
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, "#0a0a1a");
+        grad.addColorStop(1, "#0a0a0f");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Top accent line
+        ctx.fillStyle = "#00ccff";
+        ctx.fillRect(20, 20, w - 40, 2);
+
+        // Station name
+        const station = currentRadioStation || radioStations[0];
+        ctx.fillStyle = "#00ccff";
+        ctx.font = "bold 28px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(station.name, w / 2, 80);
+
+        // Genre
+        ctx.fillStyle = "#667788";
+        ctx.font = "16px sans-serif";
+        ctx.fillText(station.genre, w / 2, 110);
+
+        // Station index
+        ctx.fillStyle = "#445566";
+        ctx.font = "14px sans-serif";
+        ctx.fillText((currentRadioIndex + 1) + " / " + radioStations.length, w / 2, 140);
+
+        // Status dot + text
+        const status = radioStatus || "Ready";
+        const dotColor = isRadioPlaying ? "#00ff88" : (status.includes("Buffer") ? "#ffaa00" : "#ff4444");
+        ctx.beginPath();
+        ctx.arc(80, 185, 6, 0, Math.PI * 2);
+        ctx.fillStyle = dotColor;
+        ctx.fill();
+        ctx.fillStyle = "#cccccc";
+        ctx.font = "18px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(status, 95, 192);
+
+        // Format info
+        if (station.format) {
+          ctx.fillStyle = "#334455";
+          ctx.font = "12px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(station.format, w / 2, 230);
+        }
+
+        // Volume bar
+        const volPct = Math.round(radioVolume * 100);
+        ctx.fillStyle = "#445566";
+        ctx.font = "12px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText("VOL", 24, 258);
+        ctx.fillStyle = "#1a2a3a";
+        ctx.fillRect(56, 250, 140, 6);
+        ctx.fillStyle = "#00ccff";
+        ctx.fillRect(56, 250, 140 * radioVolume, 6);
+        ctx.fillStyle = "#667788";
+        ctx.textAlign = "right";
+        ctx.fillText(volPct + "%", w - 24, 258);
+
+        // Divider
+        ctx.fillStyle = "#1a2a3a";
+        ctx.fillRect(20, 275, w - 40, 1);
+
+        // Visualizer bars
+        const barCount = 16;
+        const barWidth = (w - 60) / barCount;
+        const barBaseY = 450;
+        const maxBarHeight = 150;
+        ctx.textAlign = "center";
+        for (let i = 0; i < barCount; i++) {
+          const barH = isRadioPlaying
+            ? (Math.random() * 0.7 + 0.3) * maxBarHeight
+            : 4;
+          const x = 30 + i * barWidth;
+          const barGrad = ctx.createLinearGradient(0, barBaseY - barH, 0, barBaseY);
+          barGrad.addColorStop(0, "#00ccff");
+          barGrad.addColorStop(1, "#004466");
+          ctx.fillStyle = barGrad;
+          ctx.fillRect(x, barBaseY - barH, barWidth - 2, barH);
+        }
+
+        // Bottom accent line
+        ctx.fillStyle = "#00ccff";
+        ctx.fillRect(20, h - 20, w - 40, 2);
+
+        infoTexture.needsUpdate = true;
+      }
+
       // ── Live Radio Streaming Player ──
       const radioStations = [
         {
@@ -998,34 +902,17 @@
       ];
 
       const radioAudio = document.getElementById("radio");
-      const radioPlayBtn = document.getElementById("radioPlayBtn");
-      const radioStatusEl = document.getElementById("radioStatus");
-      const radioFormatEl = document.getElementById("radioFormat");
+      let radioStatus = "Stopped";
       let currentRadioStation = null;
       let isRadioPlaying = false;
-
-      // Create visualizer bars
-      const rVizContainer = document.getElementById("radioVisualizer");
-      for (let i = 0; i < 16; i++) {
-        const bar = document.createElement("div");
-        bar.className = "r-viz-bar";
-        bar.style.height = "3px";
-        rVizContainer.appendChild(bar);
-      }
-      const rVizBars = rVizContainer.querySelectorAll(".r-viz-bar");
+      let currentRadioIndex = 0;
+      let radioVolume = 0.5;
+      radioAudio.volume = radioVolume;
 
       function selectRadioStation(index) {
         currentRadioIndex = index;
         const station = radioStations[index];
         currentRadioStation = station;
-        document.getElementById("radioStationName").textContent = station.name;
-        document.getElementById("radioStationGenre").textContent = station.genre;
-        radioFormatEl.textContent = station.format;
-
-        // Update active button
-        document.querySelectorAll(".station-btn").forEach((btn, i) => {
-          btn.classList.toggle("active", i === index);
-        });
 
         const wasPlaying = isRadioPlaying;
         if (isRadioPlaying) radioAudio.pause();
@@ -1033,7 +920,7 @@
         if (wasPlaying) {
           radioAudio.play().catch(() => {});
         } else {
-          radioStatusEl.textContent = "Ready — press play";
+          radioStatus = "Ready";
         }
       }
 
@@ -1042,64 +929,25 @@
         if (isRadioPlaying) {
           radioAudio.pause();
           isRadioPlaying = false;
-          radioPlayBtn.textContent = "▶";
-          radioStatusEl.textContent = "Paused";
-          stopRadioViz();
+          radioStatus = "Paused";
         } else {
           if (!radioAudio.src && currentRadioStation) radioAudio.src = currentRadioStation.url;
-          radioStatusEl.textContent = "Buffering...";
+          radioStatus = "Buffering...";
           radioAudio.play().then(() => {
             isRadioPlaying = true;
-            radioPlayBtn.textContent = "⏸";
-            radioStatusEl.textContent = "Playing";
-            startRadioViz();
+            radioStatus = "Playing";
           }).catch((err) => {
-            radioStatusEl.textContent = "Error: " + err.message;
+            radioStatus = "Error: " + err.message;
           });
         }
       }
 
-      radioPlayBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleRadioPlay(); });
-      document.getElementById("radioVolume").addEventListener("input", (e) => {
-        e.stopPropagation();
-        radioAudio.volume = e.target.value;
-      });
-      let currentRadioIndex = 0;
-
-      document.querySelectorAll(".station-btn").forEach((btn, i) => {
-        btn.addEventListener("click", (e) => { e.stopPropagation(); selectRadioStation(i); });
-      });
-
-      radioAudio.addEventListener("waiting", () => (radioStatusEl.textContent = "Buffering..."));
+      radioAudio.addEventListener("waiting", () => (radioStatus = "Buffering..."));
       radioAudio.addEventListener("playing", () => {
-        radioStatusEl.textContent = "Playing";
+        radioStatus = "Playing";
         isRadioPlaying = true;
-        radioPlayBtn.textContent = "⏸";
-        startRadioViz();
       });
-      radioAudio.addEventListener("error", () => (radioStatusEl.textContent = "Stream error — try another station"));
-
-      let radioVizInterval;
-      function startRadioViz() {
-        stopRadioViz();
-        radioVizInterval = setInterval(() => {
-          rVizBars.forEach((bar) => {
-            const h = Math.random() * 20 + 3;
-            bar.style.height = h + "px";
-            bar.classList.add("active");
-          });
-        }, 150);
-      }
-      function stopRadioViz() {
-        clearInterval(radioVizInterval);
-        rVizBars.forEach((bar) => {
-          bar.style.height = "3px";
-          bar.classList.remove("active");
-        });
-      }
-
-      // Prevent radio player clicks from triggering game controls
-      document.getElementById("radioPlayer").addEventListener("keydown", (e) => e.stopPropagation());
+      radioAudio.addEventListener("error", () => (radioStatus = "Stream error"));
 
       // Auto-select first station
       selectRadioStation(0);
@@ -1147,6 +995,9 @@
         const key = e.key.toLowerCase();
         if (key === "a" || key === "arrowleft") steerLeft();
         if (key === "d" || key === "arrowright") steerRight();
+        if (key === " ") { e.preventDefault(); toggleRadioPlay(); }
+        if (e.key === "ArrowUp") { e.preventDefault(); radioVolume = Math.min(1, radioVolume + 0.05); radioAudio.volume = radioVolume; }
+        if (e.key === "ArrowDown") { e.preventDefault(); radioVolume = Math.max(0, radioVolume - 0.05); radioAudio.volume = radioVolume; }
         if (key === "j") selectRadioStation((currentRadioIndex - 1 + radioStations.length) % radioStations.length);
         if (key === "k") selectRadioStation((currentRadioIndex + 1) % radioStations.length);
       });
@@ -1356,6 +1207,9 @@
         const rpmAngle =
           (5 * Math.PI) / 4 - (rpmValue / 8000) * ((3 * Math.PI) / 2);
         rpmNeedle.rotation.z = rpmAngle;
+
+        // Update infotainment screen
+        updateInfoScreen();
 
         // Turn Indicators logic
         const timeMs = Date.now();
