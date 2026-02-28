@@ -732,6 +732,126 @@
         });
       });
 
+      // Load Radio GLB and place it on the dashboard (lower-right of steering wheel)
+      // Radio audio
+      const radioAudio = new Audio("radio-music.m4a");
+      radioAudio.loop = true;
+      radioAudio.volume = 0.4;
+
+      // Karaoke lyrics with timings (seconds)
+      const lyrics = [
+        { time: 0, text: "" },
+        { time: 7, text: "Wise men say" },
+        { time: 14, text: "Only fools rush in" },
+        { time: 21, text: "But I can't help" },
+        { time: 27, text: "falling in love\nwith you" },
+        { time: 36, text: "Shall I stay?" },
+        { time: 43, text: "Would it be a sin" },
+        { time: 50, text: "If I can't help" },
+        { time: 56, text: "falling in love\nwith you?" },
+        { time: 65, text: "Like a river flows" },
+        { time: 68, text: "Surely to the sea" },
+        { time: 73, text: "Darling, so it goes" },
+        { time: 76, text: "Some things are\nmeant to be" },
+        { time: 82, text: "Take my hand" },
+        { time: 89, text: "Take my whole\nlife, too" },
+        { time: 97, text: "For I can't help" },
+        { time: 102, text: "falling in love\nwith you" },
+        { time: 111, text: "Like a river flows" },
+        { time: 115, text: "Surely to the sea" },
+        { time: 118, text: "Darling, so it goes" },
+        { time: 122, text: "Some things are\nmeant to be" },
+        { time: 129, text: "Take my hand" },
+        { time: 133, text: "Take my whole\nlife, too" },
+        { time: 143, text: "For I can't help" },
+        { time: 148, text: "falling in love\nwith you" },
+        { time: 157, text: "For I can't help" },
+        { time: 162, text: "falling in love\nwith you" },
+      ];
+
+      // Canvas texture for radio screen
+      const radioCanvas = document.createElement("canvas");
+      radioCanvas.width = 256;
+      radioCanvas.height = 128;
+      const radioCtx = radioCanvas.getContext("2d");
+      const radioTexture = new THREE.CanvasTexture(radioCanvas);
+      let lastLyricIndex = -1;
+
+      function updateRadioScreen() {
+        const t = radioAudio.currentTime;
+        let idx = 0;
+        for (let i = lyrics.length - 1; i >= 0; i--) {
+          if (t >= lyrics[i].time) { idx = i; break; }
+        }
+        if (idx === lastLyricIndex) return;
+        lastLyricIndex = idx;
+
+        radioCtx.fillStyle = "#0a0a0a";
+        radioCtx.fillRect(0, 0, 256, 128);
+
+        // Subtle glow border
+        radioCtx.strokeStyle = "#00ffcc";
+        radioCtx.lineWidth = 2;
+        radioCtx.strokeRect(2, 2, 252, 124);
+
+        // Draw text
+        radioCtx.fillStyle = "#00ffcc";
+        radioCtx.font = "bold 18px Courier New, monospace";
+        radioCtx.textAlign = "center";
+        radioCtx.textBaseline = "middle";
+
+        const lines = lyrics[idx].text.split("\n");
+        const lineHeight = 24;
+        const startY = 64 - ((lines.length - 1) * lineHeight) / 2;
+        lines.forEach((line, i) => {
+          radioCtx.fillText(line, 128, startY + i * lineHeight);
+        });
+
+        radioTexture.needsUpdate = true;
+      }
+
+      // Load radio model
+      gltfLoader.load("radio.glb", (gltf) => {
+        const radioModel = gltf.scene;
+        radioModel.scale.set(0.13, 0.13, 0.13);
+        radioModel.position.set(0.4, -0.3, -0.5);
+        radioModel.rotation.y = -Math.PI / 2;
+        dashGroup.add(radioModel);
+
+        // Set radio to dashboard layer, make materials emissive
+        radioModel.traverse((child) => {
+          child.layers.set(2);
+          if (child.isMesh && child.material) {
+            child.material.emissive = child.material.color.clone();
+            child.material.emissiveIntensity = 0.3;
+          }
+        });
+
+        // Add a screen plane on the radio face
+        const screenGeo = new THREE.PlaneGeometry(1.8, 0.9);
+        const screenMat = new THREE.MeshBasicMaterial({ map: radioTexture });
+        const screen = new THREE.Mesh(screenGeo, screenMat);
+        screen.position.set(0.4, 1.2, 0.6);
+        screen.scale.set(1.4, 1.4, 1.4);
+        screen.rotation.y = Math.PI / 2;
+        screen.layers.set(2);
+        radioModel.add(screen);
+
+        // Initial screen draw
+        updateRadioScreen();
+
+        // Start music on first user interaction
+        const startMusic = () => {
+          radioAudio.play().catch(() => {});
+          document.removeEventListener("click", startMusic);
+          document.removeEventListener("keydown", startMusic);
+          document.removeEventListener("touchstart", startMusic);
+        };
+        document.addEventListener("click", startMusic);
+        document.addEventListener("keydown", startMusic);
+        document.addEventListener("touchstart", startMusic);
+      });
+
       // 3. Lighting
       const ambientLight = new THREE.AmbientLight(0x112233, 0.4);
       scene.add(ambientLight);
@@ -956,6 +1076,9 @@
         headlightTarget.position.set(camera.position.x, 0, camera.position.z - 30);
         // Animate steering wheel rotation based on movement
         wheel.rotation.z = steeringDiff * -0.5;
+
+        // Update radio karaoke screen
+        updateRadioScreen();
 
         // --- Update Score ---
         scoreCounter += playerSpeed;
