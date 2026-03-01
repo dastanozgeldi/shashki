@@ -184,9 +184,11 @@
       ><br />
       Speed: <span id="speedDisplay">80</span> km/h<br />
       Controls: A / D <br />
-      Play: Space &nbsp; Volume: Up / Down <br />
-      Mode: M <br />
-      <span id="musicModeUI">Music Mode: Radio &nbsp; Switch: J / K</span>
+      Start Radio: Space<br />
+      Volume: Up / Down<br />
+      <!-- Mode: M <br /> -->
+      <!-- <span id="musicModeUI">Music Mode: Radio</span> -->
+      Switch: J / K
       <br /><br />
       <em>Watch out for traffic!</em>
     </div>
@@ -914,18 +916,32 @@
           type: "stream",
         },
         {
-          name: "Zhuldyz FM",
-          genre: "Kazakh Hits · KZ",
-          url: "http://91.201.214.229:8000/zhulduz",
-          format: "MP3 · ICY/HTTP",
+          name: "Radio NS",
+          genre: "Pop · KZ",
+          url: "https://icecast.ns.kz/radions",
+          format: "AAC · 160 kbps",
           type: "stream",
         },
         {
-          name: "Ирина Кайратовна",
-          genre: "KZ Hip-Hop · Playlist",
-          format: "SoundCloud · 26 tracks",
-          type: "soundcloud",
+          name: "Love Radio KZ",
+          genre: "Love Songs · KZ",
+          url: "https://stream.gakku.kz:8443/love128.mp3",
+          format: "MP3 · 128 kbps",
+          type: "stream",
         },
+        {
+          name: "Lux FM",
+          genre: "Pop · KZ",
+          url: "https://icecast.luxfm.kz/luxfm",
+          format: "MP3 · 128 kbps",
+          type: "stream",
+        },
+        // {
+        //   name: "Ирина Кайратовна",
+        //   genre: "KZ Hip-Hop · Playlist",
+        //   format: "SoundCloud · 26 tracks",
+        //   type: "soundcloud",
+        // },
       ];
 
       const radioAudio = document.getElementById("radio");
@@ -1110,14 +1126,15 @@
         if (key === " ") { e.preventDefault(); toggleRadioPlay(); }
         if (e.key === "ArrowUp") { e.preventDefault(); radioVolume = Math.min(1, radioVolume + 0.05); radioAudio.volume = radioVolume; scWidget.setVolume(radioVolume * 100); }
         if (e.key === "ArrowDown") { e.preventDefault(); radioVolume = Math.max(0, radioVolume - 0.05); radioAudio.volume = radioVolume; scWidget.setVolume(radioVolume * 100); }
-        if (key === "m") toggleMusicMode();
+        // if (key === "m") toggleMusicMode();
         if (musicMode === "radio") {
           if (key === "j") selectRadioStation((currentRadioIndex - 1 + radioStations.length) % radioStations.length);
           if (key === "k") selectRadioStation((currentRadioIndex + 1) % radioStations.length);
-        } else {
-          if (key === ",") scPrev();
-          if (key === ".") scNext();
-        }
+        } 
+        // else {
+        //   if (key === ",") scPrev();
+        //   if (key === ".") scNext();
+        // }
       });
 
       // Mobile Controls Detection & Setup
