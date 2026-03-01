@@ -183,8 +183,11 @@
         >0</span
       ><br />
       Speed: <span id="speedDisplay">80</span> km/h<br />
-      Controls: A / D Keys<br />
-      Radio: J / K Keys<br /><br />
+      Controls: A / D <br />
+      Play: Space &nbsp; Volume: Up / Down <br />
+      Mode: M <br />
+      <span id="musicModeUI">Music Mode: Radio &nbsp; Switch: J / K</span>
+      <br /><br />
       <em>Watch out for traffic!</em>
     </div>
 
@@ -215,6 +218,9 @@
     </div>
 
     <audio id="radio" preload="none"></audio>
+    <iframe id="scWidget" allow="autoplay" style="display:none"
+      src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fdima-manul%2Fsets%2Frq7xuwrqeotu&auto_play=false&show_artwork=false"></iframe>
+    <script src="https://w.soundcloud.com/player/api.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -801,9 +807,15 @@
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
 
+        // Mode label
+        ctx.fillStyle = musicMode === "radio" ? "#00ccff" : "#ff6b3d";
+        ctx.font = "bold 11px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(musicMode === "radio" ? "RADIO" : "PLAYLIST", w / 2, 18);
+
         // Top accent line
-        ctx.fillStyle = "#00ccff";
-        ctx.fillRect(20, 20, w - 40, 2);
+        ctx.fillStyle = musicMode === "radio" ? "#00ccff" : "#ff6b3d";
+        ctx.fillRect(20, 24, w - 40, 2);
 
         // Station name
         const station = currentRadioStation || radioStations[0];
@@ -817,10 +829,17 @@
         ctx.font = "16px sans-serif";
         ctx.fillText(station.genre, w / 2, 110);
 
+        // SC track title (if playing SoundCloud)
+        if (station.type === "soundcloud" && scTrackTitle) {
+          ctx.fillStyle = "#aabbcc";
+          ctx.font = "13px sans-serif";
+          ctx.fillText(scTrackTitle, w / 2, 135);
+        }
+
         // Station index
         ctx.fillStyle = "#445566";
         ctx.font = "14px sans-serif";
-        ctx.fillText((currentRadioIndex + 1) + " / " + radioStations.length, w / 2, 140);
+        ctx.fillText((currentRadioIndex + 1) + " / " + radioStations.length, w / 2, 158);
 
         // Status dot + text
         const status = radioStatus || "Ready";
@@ -885,62 +904,155 @@
         infoTexture.needsUpdate = true;
       }
 
-      // ── Live Radio Streaming Player ──
+      // ── Live Radio / SoundCloud Player ──
       const radioStations = [
         {
           name: "Beu FM",
           genre: "Pop KZ · Almaty",
           url: "https://stream.beufm.kz/beufm",
-          format: "MP3 · 192 kbps · ICY/HTTP",
+          format: "MP3 · 192 kbps",
+          type: "stream",
         },
         {
           name: "Zhuldyz FM",
           genre: "Kazakh Hits · KZ",
           url: "http://91.201.214.229:8000/zhulduz",
           format: "MP3 · ICY/HTTP",
+          type: "stream",
+        },
+        {
+          name: "Ирина Кайратовна",
+          genre: "KZ Hip-Hop · Playlist",
+          format: "SoundCloud · 26 tracks",
+          type: "soundcloud",
         },
       ];
 
       const radioAudio = document.getElementById("radio");
+      const scWidget = SC.Widget(document.getElementById("scWidget"));
       let radioStatus = "Stopped";
       let currentRadioStation = null;
       let isRadioPlaying = false;
       let currentRadioIndex = 0;
       let radioVolume = 0.5;
+      let scTrackTitle = "";
+      let scReady = false;
+      let musicMode = "radio"; // "radio" or "playlist"
       radioAudio.volume = radioVolume;
+
+      function updateMusicModeUI() {
+        const el = document.getElementById("musicModeUI");
+        if (musicMode === "radio") {
+          el.textContent = "Music Mode: Radio \u00A0 Switch: J / K";
+        } else {
+          el.textContent = "Music Mode: Playlist \u00A0 Switch: , / .";
+        }
+      }
+
+      function toggleMusicMode() {
+        // Stop current playback
+        if (isRadioPlaying) {
+          if (currentRadioStation && currentRadioStation.type === "soundcloud") { scWidget.pause(); }
+          else { radioAudio.pause(); }
+          isRadioPlaying = false;
+          radioStatus = "Stopped";
+        }
+        // Switch mode
+        if (musicMode === "radio") {
+          musicMode = "playlist";
+          selectRadioStation(radioStations.findIndex(s => s.type === "soundcloud"));
+        } else {
+          musicMode = "radio";
+          selectRadioStation(0);
+        }
+        updateMusicModeUI();
+      }
+
+      scWidget.bind(SC.Widget.Events.READY, () => {
+        scReady = true;
+        scWidget.setVolume(radioVolume * 100);
+      });
+      scWidget.bind(SC.Widget.Events.PLAY, () => {
+        if (currentRadioStation && currentRadioStation.type === "soundcloud") {
+          isRadioPlaying = true;
+          radioStatus = "Playing";
+        }
+      });
+      scWidget.bind(SC.Widget.Events.PAUSE, () => {
+        if (currentRadioStation && currentRadioStation.type === "soundcloud") {
+          isRadioPlaying = false;
+          radioStatus = "Paused";
+        }
+      });
+      scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, () => {
+        scWidget.getCurrentSound((sound) => {
+          if (sound && sound.title) scTrackTitle = sound.title;
+        });
+      });
+      scWidget.bind(SC.Widget.Events.ERROR, () => {
+        radioStatus = "Stream error";
+      });
 
       function selectRadioStation(index) {
         currentRadioIndex = index;
         const station = radioStations[index];
+        const prevStation = currentRadioStation;
         currentRadioStation = station;
 
-        const wasPlaying = isRadioPlaying;
-        if (isRadioPlaying) radioAudio.pause();
-        radioAudio.src = station.url;
-        if (wasPlaying) {
-          radioAudio.play().catch(() => {});
+        // Stop previous source
+        if (prevStation && prevStation.type === "soundcloud") {
+          scWidget.pause();
         } else {
+          radioAudio.pause();
+        }
+
+        if (station.type === "soundcloud") {
+          isRadioPlaying = false;
           radioStatus = "Ready";
+          scTrackTitle = "";
+        } else {
+          radioAudio.src = station.url;
+          if (prevStation && isRadioPlaying) {
+            isRadioPlaying = false;
+            radioAudio.play().catch(() => {});
+          } else {
+            isRadioPlaying = false;
+            radioStatus = "Ready";
+          }
         }
       }
 
       function toggleRadioPlay() {
         if (!currentRadioStation) selectRadioStation(0);
-        if (isRadioPlaying) {
-          radioAudio.pause();
-          isRadioPlaying = false;
-          radioStatus = "Paused";
+        const station = currentRadioStation;
+
+        if (station.type === "soundcloud") {
+          if (isRadioPlaying) {
+            scWidget.pause();
+          } else {
+            radioStatus = "Buffering...";
+            scWidget.play();
+          }
         } else {
-          if (!radioAudio.src && currentRadioStation) radioAudio.src = currentRadioStation.url;
-          radioStatus = "Buffering...";
-          radioAudio.play().then(() => {
-            isRadioPlaying = true;
-            radioStatus = "Playing";
-          }).catch((err) => {
-            radioStatus = "Error: " + err.message;
-          });
+          if (isRadioPlaying) {
+            radioAudio.pause();
+            isRadioPlaying = false;
+            radioStatus = "Paused";
+          } else {
+            if (!radioAudio.src && station) radioAudio.src = station.url;
+            radioStatus = "Buffering...";
+            radioAudio.play().then(() => {
+              isRadioPlaying = true;
+              radioStatus = "Playing";
+            }).catch((err) => {
+              radioStatus = "Error: " + err.message;
+            });
+          }
         }
       }
+
+      function scNext() { scWidget.next(); }
+      function scPrev() { scWidget.prev(); }
 
       radioAudio.addEventListener("waiting", () => (radioStatus = "Buffering..."));
       radioAudio.addEventListener("playing", () => {
@@ -996,10 +1108,16 @@
         if (key === "a" || key === "arrowleft") steerLeft();
         if (key === "d" || key === "arrowright") steerRight();
         if (key === " ") { e.preventDefault(); toggleRadioPlay(); }
-        if (e.key === "ArrowUp") { e.preventDefault(); radioVolume = Math.min(1, radioVolume + 0.05); radioAudio.volume = radioVolume; }
-        if (e.key === "ArrowDown") { e.preventDefault(); radioVolume = Math.max(0, radioVolume - 0.05); radioAudio.volume = radioVolume; }
-        if (key === "j") selectRadioStation((currentRadioIndex - 1 + radioStations.length) % radioStations.length);
-        if (key === "k") selectRadioStation((currentRadioIndex + 1) % radioStations.length);
+        if (e.key === "ArrowUp") { e.preventDefault(); radioVolume = Math.min(1, radioVolume + 0.05); radioAudio.volume = radioVolume; scWidget.setVolume(radioVolume * 100); }
+        if (e.key === "ArrowDown") { e.preventDefault(); radioVolume = Math.max(0, radioVolume - 0.05); radioAudio.volume = radioVolume; scWidget.setVolume(radioVolume * 100); }
+        if (key === "m") toggleMusicMode();
+        if (musicMode === "radio") {
+          if (key === "j") selectRadioStation((currentRadioIndex - 1 + radioStations.length) % radioStations.length);
+          if (key === "k") selectRadioStation((currentRadioIndex + 1) % radioStations.length);
+        } else {
+          if (key === ",") scPrev();
+          if (key === ".") scNext();
+        }
       });
 
       // Mobile Controls Detection & Setup
@@ -1257,6 +1375,13 @@
               document.getElementById("finalScoreDisplay").innerText =
                 Math.floor(scoreCounter * 0.1);
               document.getElementById("gameOverScreen").style.display = "flex";
+              // Stop music
+              if (isRadioPlaying) {
+                if (currentRadioStation && currentRadioStation.type === "soundcloud") { scWidget.pause(); }
+                else { radioAudio.pause(); }
+                isRadioPlaying = false;
+                radioStatus = "Stopped";
+              }
               return; // Exit current frame
             }
           }
