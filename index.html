@@ -593,6 +593,68 @@
         }
       }
 
+      // --- Digital Billboard (appears at score 50) ---
+      const billboardCanvas = document.createElement('canvas');
+      billboardCanvas.width = 512;
+      billboardCanvas.height = 256;
+      const billboardCtx = billboardCanvas.getContext('2d');
+      billboardCtx.fillStyle = '#000000';
+      billboardCtx.fillRect(0, 0, 512, 256);
+      billboardCtx.fillStyle = '#00ff00';
+      billboardCtx.font = 'bold 36px Courier New, monospace';
+      billboardCtx.textAlign = 'center';
+      billboardCtx.textBaseline = 'middle';
+      billboardCtx.fillText('Made in Kazakhstan', 256, 108);
+      billboardCtx.font = '64px serif';
+      billboardCtx.fillText('🇰🇿', 256, 178);
+      // Scanline effect
+      billboardCtx.strokeStyle = 'rgba(0, 255, 0, 0.08)';
+      for (let y = 0; y < 256; y += 4) {
+        billboardCtx.beginPath();
+        billboardCtx.moveTo(0, y);
+        billboardCtx.lineTo(512, y);
+        billboardCtx.stroke();
+      }
+      // Border glow
+      billboardCtx.strokeStyle = '#00ff00';
+      billboardCtx.lineWidth = 4;
+      billboardCtx.strokeRect(4, 4, 504, 248);
+
+      const billboardTexture = new THREE.CanvasTexture(billboardCanvas);
+      const billboardGroup = new THREE.Group();
+
+      // Screen
+      const bbScreenGeo = new THREE.PlaneGeometry(8, 4);
+      const bbScreenMat = new THREE.MeshBasicMaterial({
+        map: billboardTexture,
+        side: THREE.DoubleSide,
+      });
+      const bbScreen = new THREE.Mesh(bbScreenGeo, bbScreenMat);
+      bbScreen.position.y = 8;
+      bbScreen.rotation.y = -Math.PI / 4;
+      billboardGroup.add(bbScreen);
+
+      // Poles
+      const poleGeo = new THREE.CylinderGeometry(0.15, 0.15, 8, 8);
+      const poleMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8 });
+      const poleL = new THREE.Mesh(poleGeo, poleMat);
+      poleL.position.set(-3.2, 4, 0);
+      poleL.rotation.y = -Math.PI / 4;
+      poleL.position.x = -3.2 * Math.cos(Math.PI / 4);
+      poleL.position.z = 3.2 * Math.sin(Math.PI / 4);
+      billboardGroup.add(poleL);
+      const poleR = new THREE.Mesh(poleGeo, poleMat);
+      poleR.position.set(3.2, 4, 0);
+      poleR.rotation.y = -Math.PI / 4;
+      poleR.position.x = 3.2 * Math.cos(Math.PI / 4);
+      poleR.position.z = -3.2 * Math.sin(Math.PI / 4);
+      billboardGroup.add(poleR);
+
+      billboardGroup.position.set(15, 0, -200);
+      billboardGroup.visible = false;
+      scene.add(billboardGroup);
+      let billboardShown = false;
+
       const laneXPositions = [-6, -2, 2, 6];
 
       for (let i = 0; i < 8; i++) {
@@ -1110,11 +1172,13 @@
       const laneWidth = 4;
 
       function steerLeft() {
+        gameStarted = true;
         targetX -= laneWidth;
         targetX = Math.max(-6, Math.min(6, targetX));
       }
 
       function steerRight() {
+        gameStarted = true;
         targetX += laneWidth;
         targetX = Math.max(-6, Math.min(6, targetX));
       }
@@ -1275,11 +1339,15 @@
       let collisionCount = 0;
       let isGameOver = false;
       let scoreCounter = 0;
+      let gameStarted = false;
 
       function resetGame() {
         collisionCount = 0;
         isGameOver = false;
         scoreCounter = 0;
+        gameStarted = false;
+        billboardShown = false;
+        billboardGroup.visible = false;
 
         const uiScoreDisplay = document.getElementById("scoreDisplay");
         if (uiScoreDisplay) uiScoreDisplay.innerText = "0";
@@ -1318,6 +1386,7 @@
         wheel.rotation.z = steeringDiff * -0.5;
 
         // --- Update Score ---
+        if (gameStarted)
         scoreCounter += playerSpeed;
         const currentScore = Math.floor(scoreCounter * 0.1); // Scaled for readability
         const uiScoreDisplay = document.getElementById("scoreDisplay");
@@ -1367,6 +1436,19 @@
           obj.position.z += playerSpeed;
           if (obj.position.z > 10) obj.position.z -= objectCount * spacing;
         });
+
+        // --- Billboard at score 50 ---
+        if (!billboardShown && currentScore >= 10) {
+          billboardShown = true;
+          billboardGroup.visible = true;
+          billboardGroup.position.z = camera.position.z - 120;
+        }
+        if (billboardGroup.visible) {
+          billboardGroup.position.z += playerSpeed;
+          if (billboardGroup.position.z > camera.position.z + 20) {
+            billboardGroup.visible = false;
+          }
+        }
 
         trafficCars.forEach((carObj) => {
           carObj.mesh.position.z += playerSpeed - carObj.speed;
