@@ -1415,7 +1415,11 @@
         const timeMs = Date.now();
         const blink = timeMs % 600 < 300; // Blink on/off every 300ms
 
-        if (steeringDiff < -0.5) {
+        if (!gameStarted) {
+          // Hazard lights before player starts steering
+          leftIndicator.material = blink ? indicatorOnMat : indicatorOffMat;
+          rightIndicator.material = blink ? indicatorOnMat : indicatorOffMat;
+        } else if (steeringDiff < -0.5) {
           // Steering left
           leftIndicator.material = blink ? indicatorOnMat : indicatorOffMat;
           rightIndicator.material = indicatorOffMat;
